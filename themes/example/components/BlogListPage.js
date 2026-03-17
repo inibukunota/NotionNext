@@ -4,13 +4,14 @@ import SmartLink from '@/components/SmartLink'
 import { useRouter } from 'next/router'
 import CONFIG from '../config'
 import BlogItem from './BlogItem'
+
 /**
  * 使用分页插件的博客列表
  * @param {*} props
  * @returns
  */
 export const BlogListPage = props => {
-  const { page = 1, posts, postCount } = props
+  const { page = 1, posts = [], postCount } = props
   const { locale, NOTION_CONFIG } = useGlobal()
   const router = useRouter()
   const totalPage = Math.ceil(
@@ -28,10 +29,13 @@ export const BlogListPage = props => {
 
   const showPageCover = siteConfig('EXAMPLE_POST_LIST_COVER', null, CONFIG)
 
+  // --- NEW: sort posts newest first ---
+  const sortedPosts = posts.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+
   return (
     <div className={`w-full ${showPageCover ? 'md:pr-2' : 'md:pr-12'} mb-12`}>
       <div id='posts-wrapper'>
-        {posts?.map(post => (
+        {sortedPosts.map(post => (
           <BlogItem key={post.id} post={post} />
         ))}
       </div>
