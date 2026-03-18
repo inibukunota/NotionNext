@@ -182,6 +182,15 @@ const LayoutSlug = props => {
       ) : post && (
         <div>
           <PostMeta post={post} />
+      {post.pageCover && (
+            <div className="mb-6 w-full overflow-hidden rounded-lg">
+              <img
+                src={post.pageCover}
+                alt={post.title}
+                className="w-full object-cover max-h-96"
+              />
+            </div>
+          )}
           <div id='article-wrapper'>
             <NotionPage post={post} />
             <ShareBar post={post} />
