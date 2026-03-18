@@ -29,14 +29,21 @@ export const BlogListPage = props => {
 
   const showPageCover = siteConfig('EXAMPLE_POST_LIST_COVER', null, CONFIG)
 
- // --- Sort posts newest first using available date fields ---
-const sortedPosts = posts
-  .slice()
-  .sort((a, b) => {
-    const dateA = new Date(a.date)
-    const dateB = new Date(b.date)
-    return dateB - dateA // newest first
+  // --- FIXED: sort posts newest first ---
+  const sortedPosts = posts.slice().sort((a, b) => {
+    // Support different Notion date structures
+    const dateA = new Date(a.date?.start || a.date)
+    const dateB = new Date(b.date?.start || b.date)
+    return dateB - dateA
   })
+
+  return (
+    <div className={`w-full ${showPageCover ? 'md:pr-2' : 'md:pr-12'} mb-12`}>
+      <div id='posts-wrapper'>
+        {sortedPosts.map(post => (
+          <BlogItem key={post.id} post={post} />
+        ))}
+      </div>
 
       <div className='flex justify-between text-xs'>
         <SmartLink
@@ -47,7 +54,12 @@ const sortedPosts = posts
                 : `${pagePrefix}/page/${currentPage - 1}`,
             query: router.query.s ? { s: router.query.s } : {}
           }}
-          className={`${showPrev ? 'bg-black dark:bg-hexo-black-gray' : 'bg-gray pointer-events-none invisible'} text-white no-underline py-2 px-3 rounded`}>
+          className={`${
+            showPrev
+              ? 'bg-black dark:bg-hexo-black-gray'
+              : 'bg-gray pointer-events-none invisible'
+          } text-white no-underline py-2 px-3 rounded`}
+        >
           {locale.PAGINATION.PREV}
         </SmartLink>
         <SmartLink
@@ -55,7 +67,12 @@ const sortedPosts = posts
             pathname: `${pagePrefix}/page/${currentPage + 1}`,
             query: router.query.s ? { s: router.query.s } : {}
           }}
-          className={`${showNext ? 'bg-black dark:bg-hexo-black-gray ' : 'bg-gray pointer-events-none invisible'} text-white no-underline py-2 px-3 rounded`}>
+          className={`${
+            showNext
+              ? 'bg-black dark:bg-hexo-black-gray '
+              : 'bg-gray pointer-events-none invisible'
+          } text-white no-underline py-2 px-3 rounded`}
+        >
           {locale.PAGINATION.NEXT}
         </SmartLink>
       </div>
