@@ -29,16 +29,14 @@ export const BlogListPage = props => {
 
   const showPageCover = siteConfig('EXAMPLE_POST_LIST_COVER', null, CONFIG)
 
-  // --- NEW: sort posts newest first ---
-  const sortedPosts = posts.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
-
-  return (
-    <div className={`w-full ${showPageCover ? 'md:pr-2' : 'md:pr-12'} mb-12`}>
-      <div id='posts-wrapper'>
-        {sortedPosts.map(post => (
-          <BlogItem key={post.id} post={post} />
-        ))}
-      </div>
+ // --- Sort posts newest first using available date fields ---
+const sortedPosts = posts
+  .slice()
+  .sort(
+    (a, b) =>
+      new Date(b.publishDate || b.createdTime || b.date) -
+      new Date(a.publishDate || a.createdTime || a.date)
+  )
 
       <div className='flex justify-between text-xs'>
         <SmartLink
