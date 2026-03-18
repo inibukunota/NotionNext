@@ -50,9 +50,6 @@ const LayoutBase = props => {
 
       {/* 页头 */}
       <Header {...props} />
-      {/* 标题栏 */}
-      //<TitleBar {...props} />
-
       {/* 主体 */}
       <div id='container-inner' className='w-full relative z-10'>
         <div
