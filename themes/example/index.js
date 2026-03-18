@@ -20,7 +20,7 @@ import { PostLock } from './components/PostLock'
 import { PostMeta } from './components/PostMeta'
 import SearchInput from './components/SearchInput'
 import { SideBar } from './components/SideBar'
-import TitleBar from './components/TitleBar'
+//import TitleBar from './components/TitleBar'
 import CONFIG from './config'
 import { Style } from './style'
 
