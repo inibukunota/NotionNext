@@ -32,11 +32,11 @@ export const BlogListPage = props => {
  // --- Sort posts newest first using available date fields ---
 const sortedPosts = posts
   .slice()
-  .sort(
-    (a, b) =>
-      new Date(b.publishDate || b.createdTime || b.date) -
-      new Date(a.publishDate || a.createdTime || a.date)
-  )
+  .sort((a, b) => {
+    const dateA = new Date(a.date)
+    const dateB = new Date(b.date)
+    return dateB - dateA // newest first
+  })
 
       <div className='flex justify-between text-xs'>
         <SmartLink
