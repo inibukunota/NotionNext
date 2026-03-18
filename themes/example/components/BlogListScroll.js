@@ -16,8 +16,12 @@ export const BlogListScroll = props => {
   const [page, updatePage] = useState(1)
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
 
-  // --- NEW: sort posts newest first ---
-  const sortedPosts = posts.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+  // --- FIXED: sort posts newest first with nested date support ---
+  const sortedPosts = posts.slice().sort((a, b) => {
+    const dateA = new Date(a.date?.start || a.date)
+    const dateB = new Date(b.date?.start || b.date)
+    return dateB - dateA
+  })
 
   let hasMore = false
   const postsToShow = sortedPosts.slice(0, POSTS_PER_PAGE * page)
