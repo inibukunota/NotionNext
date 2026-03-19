@@ -3,7 +3,7 @@ import { useGlobal } from '@/lib/global'
 import { loadExternalResource } from '@/lib/utils'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 /**
  * 页面的Head头，有用于SEO
@@ -22,25 +22,17 @@ const SEO = props => {
   const webFontUrl = siteConfig('FONT_URL')
 
   useEffect(() => {
-    // 使用WebFontLoader字体加载
     loadExternalResource(
       'https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js',
       'js'
-    ).then(url => {
+    ).then(() => {
       const WebFont = window?.WebFont
       if (WebFont) {
-        // console.log('LoadWebFont', webFontUrl)
-        WebFont.load({
-          custom: {
-            // families: ['"LXGW WenKai"'],
-            urls: webFontUrl
-          }
-        })
+        WebFont.load({ custom: { urls: webFontUrl } })
       }
     })
   }, [])
 
-  // SEO关键词
   const KEYWORDS = siteConfig('KEYWORDS')
   let keywords = meta?.tags || KEYWORDS
   if (post?.tags && post?.tags?.length > 0) {
@@ -50,64 +42,71 @@ const SEO = props => {
     url = `${url}/${meta.slug}`
     image = meta.image || '/bg_image.jpg'
   }
+
   const TITLE = siteConfig('TITLE')
   const title = meta?.title || TITLE
   const description = meta?.description || `${siteInfo?.description}`
   const type = meta?.type || 'website'
-  const lang = siteConfig('LANG').replace('-', '_') // Facebook OpenGraph 要 zh_CN 這樣的格式才抓得到語言
-  const category = meta?.category || KEYWORDS // section 主要是像是 category 這樣的分類，Facebook 用這個來抓連結的分類
+  const lang = siteConfig('LANG').replace('-', '_')
+  const category = meta?.category || KEYWORDS
   const favicon = siteConfig('BLOG_FAVICON')
   const BACKGROUND_DARK = siteConfig('BACKGROUND_DARK', '', NOTION_CONFIG)
+  const AUTHOR = siteConfig('AUTHOR')
 
-  const SEO_BAIDU_SITE_VERIFICATION = siteConfig(
-    'SEO_BAIDU_SITE_VERIFICATION',
-    null,
-    NOTION_CONFIG
-  )
-
-  const SEO_GOOGLE_SITE_VERIFICATION = siteConfig(
-    'SEO_GOOGLE_SITE_VERIFICATION',
-    null,
-    NOTION_CONFIG
-  )
-
+  const SEO_BAIDU_SITE_VERIFICATION = siteConfig('SEO_BAIDU_SITE_VERIFICATION', null, NOTION_CONFIG)
+  const SEO_GOOGLE_SITE_VERIFICATION = siteConfig('SEO_GOOGLE_SITE_VERIFICATION', null, NOTION_CONFIG)
   const BLOG_FAVICON = siteConfig('BLOG_FAVICON', null, NOTION_CONFIG)
-
-  const COMMENT_WEBMENTION_ENABLE = siteConfig(
-    'COMMENT_WEBMENTION_ENABLE',
-    null,
-    NOTION_CONFIG
-  )
-
-  const COMMENT_WEBMENTION_HOSTNAME = siteConfig(
-    'COMMENT_WEBMENTION_HOSTNAME',
-    null,
-    NOTION_CONFIG
-  )
-  const COMMENT_WEBMENTION_AUTH = siteConfig(
-    'COMMENT_WEBMENTION_AUTH',
-    null,
-    NOTION_CONFIG
-  )
-  const ANALYTICS_BUSUANZI_ENABLE = siteConfig(
-    'ANALYTICS_BUSUANZI_ENABLE',
-    null,
-    NOTION_CONFIG
-  )
-
+  const COMMENT_WEBMENTION_ENABLE = siteConfig('COMMENT_WEBMENTION_ENABLE', null, NOTION_CONFIG)
+  const COMMENT_WEBMENTION_HOSTNAME = siteConfig('COMMENT_WEBMENTION_HOSTNAME', null, NOTION_CONFIG)
+  const COMMENT_WEBMENTION_AUTH = siteConfig('COMMENT_WEBMENTION_AUTH', null, NOTION_CONFIG)
+  const ANALYTICS_BUSUANZI_ENABLE = siteConfig('ANALYTICS_BUSUANZI_ENABLE', null, NOTION_CONFIG)
   const FACEBOOK_PAGE = siteConfig('FACEBOOK_PAGE', null, NOTION_CONFIG)
 
-  const AUTHOR = siteConfig('AUTHOR')
+  // FIX: Analytics config reads — used to make DNS prefetch conditional
+  const ANALYTICS_GOOGLE_ID = siteConfig('ANALYTICS_GOOGLE_ID', null, NOTION_CONFIG)
+  const ANALYTICS_BAIDU_ID = siteConfig('ANALYTICS_BAIDU_ID', null, NOTION_CONFIG)
+  const CLARITY_ID = siteConfig('CLARITY_ID', null, NOTION_CONFIG)
+  const UMAMI_HOST = siteConfig('UMAMI_HOST', null, NOTION_CONFIG)
+  const AD_WWADS_ID = siteConfig('AD_WWADS_ID', null, NOTION_CONFIG)
+
+  // FIX: generateStructuredData was called inline on every render, rebuilding
+  // the full JSON-LD object each time. useMemo caches the serialised string and
+  // only recomputes when the post slug, type, or site info actually changes.
+  const structuredDataJson = useMemo(
+    () => JSON.stringify(generateStructuredData(meta, siteInfo, url, image, AUTHOR)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [meta?.slug, meta?.type, siteInfo?.title, url, image, AUTHOR]
+  )
+
+  // FIX: canonical URL — one of the most direct on-page SEO signals.
+  // Prevents Google treating /page/1 and / as duplicate content, and gives
+  // crawlers a single authoritative URL for each page.
+  const canonicalUrl = `${LINK}${meta?.slug ? `/${meta.slug}` : ''}`
+
   return (
     <Head>
       <link rel='icon' href={favicon} />
       <title>{title}</title>
+
+      {/* FIX: canonical tag — prevents duplicate content penalties */}
+      <link rel='canonical' href={canonicalUrl} />
+
       <meta name='theme-color' content={BACKGROUND_DARK} />
       <meta
         name='viewport'
         content='width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0'
       />
-      <meta name='robots' content='follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1' />
+      {/* FIX: robots meta is more specific per page type.
+          Post pages allow indexing; 404 and search result pages are noindexed
+          to avoid wasting crawl budget on thin or duplicate content. */}
+      <meta
+        name='robots'
+        content={
+          meta?.type === '404' || router.route === '/search'
+            ? 'noindex, follow'
+            : 'follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+        }
+      />
       <meta charSet='UTF-8' />
       <meta name='format-detection' content='telephone=no' />
       <meta name='mobile-web-app-capable' content='yes' />
@@ -117,16 +116,10 @@ const SEO = props => {
 
       {/* 搜索引擎验证 */}
       {SEO_GOOGLE_SITE_VERIFICATION && (
-        <meta
-          name='google-site-verification'
-          content={SEO_GOOGLE_SITE_VERIFICATION}
-        />
+        <meta name='google-site-verification' content={SEO_GOOGLE_SITE_VERIFICATION} />
       )}
       {SEO_BAIDU_SITE_VERIFICATION && (
-        <meta
-          name='baidu-site-verification'
-          content={SEO_BAIDU_SITE_VERIFICATION}
-        />
+        <meta name='baidu-site-verification' content={SEO_BAIDU_SITE_VERIFICATION} />
       )}
 
       {/* 基础SEO元数据 */}
@@ -139,6 +132,7 @@ const SEO = props => {
       <meta httpEquiv='content-language' content={siteConfig('LANG')} />
       <meta name='geo.region' content={siteConfig('GEO_REGION', 'CN')} />
       <meta name='geo.country' content={siteConfig('GEO_COUNTRY', 'CN')} />
+
       {/* Open Graph 元数据 */}
       <meta property='og:locale' content={lang} />
       <meta property='og:title' content={title} />
@@ -164,23 +158,16 @@ const SEO = props => {
 
       {COMMENT_WEBMENTION_ENABLE && (
         <>
-          <link
-            rel='webmention'
-            href={`https://webmention.io/${COMMENT_WEBMENTION_HOSTNAME}/webmention`}
-          />
-          <link
-            rel='pingback'
-            href={`https://webmention.io/${COMMENT_WEBMENTION_HOSTNAME}/xmlrpc`}
-          />
-          {COMMENT_WEBMENTION_AUTH && (
-            <link href={COMMENT_WEBMENTION_AUTH} rel='me' />
-          )}
+          <link rel='webmention' href={`https://webmention.io/${COMMENT_WEBMENTION_HOSTNAME}/webmention`} />
+          <link rel='pingback' href={`https://webmention.io/${COMMENT_WEBMENTION_HOSTNAME}/xmlrpc`} />
+          {COMMENT_WEBMENTION_AUTH && <link href={COMMENT_WEBMENTION_AUTH} rel='me' />}
         </>
       )}
 
       {ANALYTICS_BUSUANZI_ENABLE && (
         <meta name='referrer' content='no-referrer-when-downgrade' />
       )}
+
       {/* 文章特定元数据 */}
       {meta?.type === 'Post' && (
         <>
@@ -193,22 +180,47 @@ const SEO = props => {
         </>
       )}
 
-      {/* 结构化数据 */}
+      {/* FIX: structuredData is now memoized — no longer recalculated every render */}
       <script
         type='application/ld+json'
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateStructuredData(meta, siteInfo, url, image, AUTHOR))
-        }}
+        dangerouslySetInnerHTML={{ __html: structuredDataJson }}
       />
 
-      {/* DNS预取和预连接 */}
-      <link rel='dns-prefetch' href='//fonts.googleapis.com' />
-      <link rel='dns-prefetch' href='//www.google-analytics.com' />
-      <link rel='dns-prefetch' href='//www.googletagmanager.com' />
+      {/* FIX: DNS prefetch is now conditional — only emit prefetch hints for
+          services that are actually configured. The original code emitted
+          prefetch tags for Google Analytics and GTM unconditionally, which
+          caused DNS lookups even when those services were disabled. Each extra
+          DNS lookup adds ~20–120ms on a cold connection. */}
+      {(ANALYTICS_GOOGLE_ID || webFontUrl) && (
+        <link rel='dns-prefetch' href='//fonts.googleapis.com' />
+      )}
+      {ANALYTICS_GOOGLE_ID && (
+        <>
+          <link rel='dns-prefetch' href='//www.google-analytics.com' />
+          <link rel='dns-prefetch' href='//www.googletagmanager.com' />
+          <link rel='preconnect' href='https://www.googletagmanager.com' />
+        </>
+      )}
+      {ANALYTICS_BAIDU_ID && (
+        <link rel='dns-prefetch' href='//hm.baidu.com' />
+      )}
+      {CLARITY_ID && (
+        <link rel='dns-prefetch' href='//www.clarity.ms' />
+      )}
+      {UMAMI_HOST && (
+        <link rel='dns-prefetch' href={`//${new URL(UMAMI_HOST).hostname}`} />
+      )}
+      {AD_WWADS_ID && (
+        <link rel='preconnect' href='https://cdn.wwads.cn' />
+      )}
+      {/* Fonts preconnect — always needed for custom font loading */}
       <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
 
-      {/* 预加载关键资源 */}
-      <link rel='preload' href='/fonts/inter-var.woff2' as='font' type='font/woff2' crossOrigin='anonymous' />
+      {/* FIX: The original preload targeted /fonts/inter-var.woff2 which does
+          not exist in this project — a missing preload wastes a high-priority
+          network slot and generates a console warning. Removed. If you add a
+          self-hosted font in /public/fonts/, re-add the preload pointing at
+          the correct filename. */}
 
       {children}
     </Head>
@@ -217,12 +229,6 @@ const SEO = props => {
 
 /**
  * 生成结构化数据
- * @param {*} meta
- * @param {*} siteInfo
- * @param {*} url
- * @param {*} image
- * @param {*} author
- * @returns
  */
 const generateStructuredData = (meta, siteInfo, url, image, author) => {
   const baseData = {
@@ -245,7 +251,6 @@ const generateStructuredData = (meta, siteInfo, url, image, author) => {
     }
   }
 
-  // 如果是文章页面，添加文章结构化数据
   if (meta?.type === 'Post') {
     return {
       '@context': 'https://schema.org',
@@ -282,14 +287,12 @@ const generateStructuredData = (meta, siteInfo, url, image, author) => {
 
 /**
  * 获取SEO信息
- * @param {*} props
- * @param {*} router
  */
 const getSEOMeta = (props, router, locale) => {
   const { post, siteInfo, tag, category, page } = props
   const keyword = router?.query?.s
-
   const TITLE = siteConfig('TITLE')
+
   switch (router.route) {
     case '/':
       return {
@@ -360,7 +363,8 @@ const getSEOMeta = (props, router, locale) => {
     case '/404':
       return {
         title: `${siteInfo?.title} | ${locale.NAV.PAGE_NOT_FOUND}`,
-        image: `${siteInfo?.pageCover}`
+        image: `${siteInfo?.pageCover}`,
+        type: '404'
       }
     case '/tag':
       return {
