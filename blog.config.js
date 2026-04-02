@@ -35,6 +35,7 @@ const BLOG = {
   ...require('./conf/analytics.config'), // 站点访问统计
   ...require('./conf/image.config'), // 网站图片相关配置
   ...require('./conf/font.config'), // 网站字体
+  ...require('./conf/right-click-menu'), // 自定义右键菜单相关配置
   ...require('./conf/code.config'), // 网站代码块样式
   ...require('./conf/animation.config'), // 动效美化效果
   ...require('./conf/widget.config'), // 悬浮在网页上的挂件，聊天客服、宠物挂件、音乐播放器等
@@ -52,7 +53,7 @@ const BLOG = {
   CUSTOM_EXTERNAL_CSS: [''], // e.g. ['http://xx.com/style.css','http://xx.com/style.css']
 
   // 自定义菜单
-  CUSTOM_MENU: process.env.NEXT_PUBLIC_CUSTOM_MENU || true, // 支持Menu类型的菜单，替代了3.12版本前的Page类型
+  CUSTOM_MENU: process.env.NEXT_PUBLIC_CUSTOM_MENU || false, // 支持Menu类型的菜单，替代了3.12版本前的Page类型
 
   // 文章列表相关设置
   CAN_COPY: process.env.NEXT_PUBLIC_CAN_COPY || true, // 是否允许复制页面内容 默认允许，如果设置为false、则全栈禁止复制内容。
